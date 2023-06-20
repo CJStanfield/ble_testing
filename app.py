@@ -45,7 +45,7 @@ logger.addHandler(filelogHandler)
 logger.addHandler(logHandler)
 
 
-JXNBaseUrl = "XXXXXXXXXXXX"
+VivaldiBaseUrl = "XXXXXXXXXXXX"
 
 mainloop = None
 
@@ -84,7 +84,7 @@ def register_app_error_cb(error):
     mainloop.quit()
 
 
-class JXNS1Service(Service):
+class VivaldiS1Service(Service):
     """
     Dummy test service that provides characteristics and descriptors that
     exercise various API functionality.
@@ -127,7 +127,7 @@ class PowerControlCharacteristic(Characteristic):
         logger.debug("power Read: " + repr(self.value))
         res = None
         try:
-            res = requests.get(JXNBaseUrl + "/sensor")
+            res = requests.get(VivaldiBaseUrl + "/vivaldi")
             self.value = bytearray(res.json()["machine"], encoding="utf8")
         except Exception as e:
             logger.error(f"Error getting status {e}")
@@ -143,7 +143,7 @@ class PowerControlCharacteristic(Characteristic):
             logger.info("writing {cmd} to machine")
             data = {"cmd": cmd.lower()}
             try:
-                res = requests.post(JXNBaseUrl + "/sensor/cmds", json=data)
+                res = requests.post(VivaldiBaseUrl + "/vivaldi/cmds", json=data)
             except Exceptions as e:
                 logger.error(f"Error updating machine state: {e}")
         else:
@@ -169,7 +169,7 @@ class BoilerControlCharacteristic(Characteristic):
         logger.info("boiler read: " + repr(self.value))
         res = None
         try:
-            res = requests.get(JXNBaseUrl + "/sensor")
+            res = requests.get(VivaldiBaseUrl + "/vivaldi")
             self.value = bytearray(res.json()["boiler"], encoding="utf8")
         except Exception as e:
             logger.error(f"Error getting status {e}")
@@ -184,7 +184,7 @@ class BoilerControlCharacteristic(Characteristic):
         logger.info("writing {cmd} to machine")
         data = {"cmd": "setboiler", "state": cmd.lower()}
         try:
-            res = requests.post(JXNBaseUrl + "/sensor/cmds", json=data)
+            res = requests.post(VivaldiBaseUrl + "/vivaldi/cmds", json=data)
             logger.info(res)
         except Exceptions as e:
             logger.error(f"Error updating machine state: {e}")
@@ -207,7 +207,7 @@ class AutoOffCharacteristic(Characteristic):
         logger.info("auto off read: " + repr(self.value))
         res = None
         try:
-            res = requests.get(JXNBaseUrl + "/sensor")
+            res = requests.get(VivaldiBaseUrl + "/vivaldi")
             self.value = bytearray(struct.pack("i", int(res.json()["autoOffMinutes"])))
         except Exception as e:
             logger.error(f"Error getting status {e}")
@@ -222,7 +222,7 @@ class AutoOffCharacteristic(Characteristic):
         logger.info("writing {cmd} to machine")
         data = {"cmd": "autoOffMinutes", "time": struct.unpack("i", cmd)[0]}
         try:
-            res = requests.post(JXNBaseUrl + "/sensor/cmds", json=data)
+            res = requests.post(VivaldiBaseUrl + "/vivaldi/cmds", json=data)
             logger.info(res)
         except Exceptions as e:
             logger.error(f"Error updating machine state: {e}")
@@ -253,15 +253,15 @@ class CharacteristicUserDescriptionDescriptor(Descriptor):
         self.value = value
 
 
-class JXNAdvertisement(Advertisement):
+class VivaldiAdvertisement(Advertisement):
     def __init__(self, bus, index):
         Advertisement.__init__(self, bus, index, "peripheral")
         self.add_manufacturer_data(
             0xFFFF, [0x70, 0x74],
         )
-        self.add_service_uuid(JXNS1Service.ESPRESSO_SVC_UUID)
+        self.add_service_uuid(VivaldiS1Service.ESPRESSO_SVC_UUID)
 
-        self.add_local_name("JXN")
+        self.add_local_name("Vivaldi")
         self.include_tx_power = True
 
 
@@ -302,13 +302,13 @@ def main():
     service_manager = dbus.Interface(adapter_obj, GATT_MANAGER_IFACE)
     ad_manager = dbus.Interface(adapter_obj, LE_ADVERTISING_MANAGER_IFACE)
 
-    advertisement = JXNAdvertisement(bus, 0)
+    advertisement = VivaldiAdvertisement(bus, 0)
     obj = bus.get_object(BLUEZ_SERVICE_NAME, "/org/bluez")
 
     agent = Agent(bus, AGENT_PATH)
 
     app = Application(bus)
-    app.add_service(JXNS1Service(bus, 2))
+    app.add_service(VivaldiS1Service(bus, 2))
 
     mainloop = MainLoop()
 
