@@ -261,7 +261,7 @@ class JXNAdvertisement(Advertisement):
         )
         self.add_service_uuid(JXNS1Service.ESPRESSO_SVC_UUID)
 
-        self.add_local_name("Vivaldi")
+        self.add_local_name("JXN")
         self.include_tx_power = True
 
 
