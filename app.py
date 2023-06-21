@@ -91,16 +91,16 @@ class JXNS1Service(Service):
 
     """
 
-    ESPRESSO_SVC_UUID = "12634d89-d598-4874-8e86-7d042ee07ba7"
+    WIFI_SVC_UUID = "12634d89-d598-4874-8e86-7d042ee07ba7"
 
     def __init__(self, bus, index):
-        Service.__init__(self, bus, index, self.ESPRESSO_SVC_UUID, True)
-        self.add_characteristic(PowerControlCharacteristic(bus, 0, self))
-        self.add_characteristic(BoilerControlCharacteristic(bus, 1, self))
-        self.add_characteristic(AutoOffCharacteristic(bus, 2, self))
+        Service.__init__(self, bus, index, self.WIFI_SVC_UUID, True)
+        self.add_characteristic(WifiPasswordCharacteristic(bus, 0, self))
+        # self.add_characteristic(BoilerControlCharacteristic(bus, 1, self))
+        # self.add_characteristic(AutoOffCharacteristic(bus, 2, self))
 
 
-class PowerControlCharacteristic(Characteristic):
+class WifiPasswordCharacteristic(Characteristic):
     uuid = "4116f8d2-9f66-4f58-a53d-fc7440e7c14e"
     description = b"Get/set machine power state {'ON', 'OFF', 'UNKNOWN'}"
 
@@ -127,8 +127,8 @@ class PowerControlCharacteristic(Characteristic):
         logger.debug("power Read: " + repr(self.value))
         res = None
         try:
-            res = requests.get(JXNBaseUrl + "/sensor")
-            self.value = bytearray(res.json()["machine"], encoding="utf8")
+            # res = requests.get(JXNBaseUrl + "/sensor")
+            self.value = bytearray("Setting your password complete", encoding="utf8")
         except Exception as e:
             logger.error(f"Error getting status {e}")
             self.value = bytearray(self.State.unknown, encoding="utf8")
@@ -143,7 +143,8 @@ class PowerControlCharacteristic(Characteristic):
             logger.info("writing {cmd} to machine")
             data = {"cmd": cmd.lower()}
             try:
-                res = requests.post(JXNBaseUrl + "/sensor/cmds", json=data)
+                logger.info(f"state written {cmd}")
+                # res = requests.post(JXNBaseUrl + "/sensor/cmds", json=data)
             except Exceptions as e:
                 logger.error(f"Error updating machine state: {e}")
         else:
@@ -233,7 +234,6 @@ class CharacteristicUserDescriptionDescriptor(Descriptor):
     """
     Writable CUD descriptor.
     """
-
     CUD_UUID = "2901"
 
     def __init__(
@@ -259,7 +259,7 @@ class JXNAdvertisement(Advertisement):
         self.add_manufacturer_data(
             0xFFFF, [0x70, 0x74],
         )
-        self.add_service_uuid(JXNS1Service.ESPRESSO_SVC_UUID)
+        self.add_service_uuid(JXNS1Service.WIFI_SVC_UUID)
 
         self.add_local_name("JXN")
         self.include_tx_power = True
