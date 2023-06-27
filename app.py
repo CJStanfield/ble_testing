@@ -116,7 +116,7 @@ class WifiPasswordCharacteristic(Characteristic):
 
     def __init__(self, bus, index, service):
         Characteristic.__init__(
-            self, bus, index, self.uuid, ["encrypt-read", "encrypt-write"], service,
+            self, bus, index, self.uuid, ["secure-read", "secure-write"], service,
         )
 
         self.value = [0xFF]
