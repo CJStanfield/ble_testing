@@ -45,7 +45,6 @@ logger.addHandler(filelogHandler)
 logger.addHandler(logHandler)
 
 
-JXNBaseUrl = "XXXXXXXXXXXX"
 
 mainloop = None
 
@@ -117,7 +116,7 @@ class WifiPasswordCharacteristic(Characteristic):
 
     def __init__(self, bus, index, service):
         Characteristic.__init__(
-            self, bus, index, self.uuid, ["encrypt-read", "encrypt-write"], service,
+            self, bus, index, self.uuid, [], service,
         )
 
         self.value = [0xFF]
@@ -153,83 +152,6 @@ class WifiPasswordCharacteristic(Characteristic):
             raise NotPermittedException
 
         self.value = value
-
-
-class BoilerControlCharacteristic(Characteristic):
-    uuid = "322e774f-c909-49c4-bd7b-48a4003a967f"
-    description = b"Get/set boiler power state can be `on` or `off`"
-
-    def __init__(self, bus, index, service):
-        Characteristic.__init__(
-            self, bus, index, self.uuid, ["encrypt-read", "encrypt-write"], service,
-        )
-
-        self.value = []
-        self.add_descriptor(CharacteristicUserDescriptionDescriptor(bus, 1, self))
-
-    def ReadValue(self, options):
-        logger.info("boiler read: " + repr(self.value))
-        res = None
-        try:
-            res = requests.get(JXNBaseUrl + "/sensor")
-            self.value = bytearray(res.json()["boiler"], encoding="utf8")
-        except Exception as e:
-            logger.error(f"Error getting status {e}")
-
-        return self.value
-
-    def WriteValue(self, value, options):
-        logger.info("boiler state Write: " + repr(value))
-        cmd = bytes(value).decode("utf-8")
-
-        # write it to machine
-        logger.info("writing {cmd} to machine")
-        data = {"cmd": "setboiler", "state": cmd.lower()}
-        try:
-            res = requests.post(JXNBaseUrl + "/sensor/cmds", json=data)
-            logger.info(res)
-        except Exceptions as e:
-            logger.error(f"Error updating machine state: {e}")
-            raise
-
-
-class AutoOffCharacteristic(Characteristic):
-    uuid = "9c7dbce8-de5f-4168-89dd-74f04f4e5842"
-    description = b"Get/set autoff time in minutes"
-
-    def __init__(self, bus, index, service):
-        Characteristic.__init__(
-            self, bus, index, self.uuid, ["secure-read", "secure-write"], service,
-        )
-
-        self.value = []
-        self.add_descriptor(CharacteristicUserDescriptionDescriptor(bus, 1, self))
-
-    def ReadValue(self, options):
-        logger.info("auto off read: " + repr(self.value))
-        res = None
-        try:
-            res = requests.get(JXNBaseUrl + "/sensor")
-            self.value = bytearray(struct.pack("i", int(res.json()["autoOffMinutes"])))
-        except Exception as e:
-            logger.error(f"Error getting status {e}")
-
-        return self.value
-
-    def WriteValue(self, value, options):
-        logger.info("auto off write: " + repr(value))
-        cmd = bytes(value)
-
-        # write it to machine
-        logger.info("writing {cmd} to machine")
-        data = {"cmd": "autoOffMinutes", "time": struct.unpack("i", cmd)[0]}
-        try:
-            res = requests.post(JXNBaseUrl + "/sensor/cmds", json=data)
-            logger.info(res)
-        except Exceptions as e:
-            logger.error(f"Error updating machine state: {e}")
-            raise
-
 
 class CharacteristicUserDescriptionDescriptor(Descriptor):
     """
